@@ -1,6 +1,7 @@
----create database sampledb;
+--create database sampledb;
+go
 
-use sampledb;
+--use sampledb;
 
 -- A company can have many locations (one-to-many)
 -- A company can have many jobs
@@ -28,7 +29,7 @@ create table dbo.Jobs
  id int not null primary key identity,
  jobName  varchar(50) not null,
  company_id int not null,
- constraint jobs_company foreign key (company_id) references Companies(id) on update cascade on delete cascade
+ constraint jobs_company foreign key (company_id) references Companies(id) on update no action on delete no action
 )
 
 -- Many locations can belong to one company
@@ -39,7 +40,7 @@ create table dbo.Locations
  city  varchar(50) not null,
  state  varchar(50) not null,
  company_id int not null,
- constraint locations_company foreign key (company_id) references Companies(id) on update cascade on delete cascade
+ constraint locations_company foreign key (company_id) references Companies(id) on update no action on delete no action
 )
 
 create table dbo.WorkDone
@@ -51,9 +52,9 @@ create table dbo.WorkDone
  hoursWorked int not null,
  description varchar(50) not null ,
  datePerformed date not null,
- constraint workdone_employees foreign key (employee_id) references Employees(id) on update cascade on delete cascade,
- constraint workdone_jobs foreign key (job_id) references Jobs(id) on update cascade on delete cascade,
- constraint workdone_locations foreign key (location_id) references Locations(id) on update cascade on delete cascade
+ constraint workdone_employees foreign key (employee_id) references Employees(id) on update no action on delete no action,
+ constraint workdone_jobs foreign key (job_id) references Jobs(id) on update no action on delete no action,
+ constraint workdone_locations foreign key (location_id) references Locations(id) on update no action on delete no action
 )
 go
 
@@ -194,3 +195,60 @@ exec dbo.spInsertWorkdone
 @employee_id = 2, @job_id = 2, @location_id = 2, @hoursWorked = 12, @description = 'Cleaned the room', @datePerformed='1/31/2019'
 exec dbo.spInsertWorkdone 
 @employee_id = 3, @job_id = 3, @location_id = 3, @hoursWorked = 50, @description = 'Repaired the computer', @datePerformed='2/01/2019'
+
+
+-- Inner Join
+select c.companyName, l.city
+from  dbo.Companies c
+inner join dbo.Locations l on l.company_id = c.id
+
+-- left Join
+select c.companyName, l.city
+from  dbo.Companies c
+left join dbo.Locations l on l.company_id = c.id
+
+-- right Join
+select c.companyName, l.city
+from  dbo.Companies c
+right join dbo.Locations l on l.company_id = c.id
+
+
+-- Multiple Join
+select 
+	c.companyName,
+    w.hoursWorked,
+	w.description as 'Explanation of Work',
+	e.firstName + ' ' + e.lastName as 'FullName',
+	j.jobName,
+	l.city,
+	l.state
+from dbo.Workdone w
+inner join dbo.Employees e on w.employee_id = e.id 
+inner join dbo.Jobs j on w.job_id = j.id
+inner join dbo.Locations l on w.location_id = l.id
+--which company is the location for?
+inner join dbo.Companies c on l.company_id = c.id
+
+
+-- group by -- GROUP BY (total work hours by each customer, employees)
+select 
+	c.companyName, 
+	e.firstName,
+	SUM(w.hoursWorked) totalWorkHours
+from dbo.Workdone w
+inner join dbo.Employees e on w.employee_id = e.id 
+inner join dbo.Jobs j on w.job_id = j.id
+inner join dbo.Locations l on w.location_id = l.id
+--which company is the location for?
+inner join dbo.Companies c on l.company_id = c.id
+group by c.companyName, e.firstName
+having SUM(w.hoursWorked) > 10
+order by c.companyName
+
+-- UNION (ALL)
+select c.companyName  Name , c.emailAddress
+from dbo.Companies c
+UNION ALL
+select e.firstName + ' ' + e.lastName as 'Name', e.emailAddress
+from dbo.Employees e
+go

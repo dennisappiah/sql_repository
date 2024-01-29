@@ -65,6 +65,28 @@ alter table ParchPosh.dbo.orders
 add occurred_at date not null;
 
 
+---
+-- query to return the 3 earliest orders in the orders table.
+SELECT	TOP 3 id, occurred_at, total_amt_usd
+FROM dbo.orders
+ORDER BY occurred_at
+
+-- query to return the top 5 orders in terms of largest total_amt_usd
+SELECT id, account_id, total_amt_usd
+FROM dbo.orders
+ORDER BY total_amt_usd DESC 
+
+
+-- query to find the standard unit price for each order
+SELECT TOP 3 id, account_id, (standard_amt_usd/ standard_qantity) AS unit_price
+FROM dbo.orders
+
+--  query that finds the percentage of revenue that comes from poster paper for each order.
+SELECT TOP 3 id, account_id, 
+       poster_amt_usd/(standard_amt_usd + gloss_amt_usd + poster_amt_usd) AS post_per
+FROM dbo.orders
+
+
 
 -- Joining two tables
 SELECT o.*, a.*
@@ -88,7 +110,6 @@ on w.account_id = a.id
 where a.name = 'StandardAccont';
 
 -- Provide a table that provides the region for each sales_rep along with their associated accounts.
-use ParchPosh;
 
 select r.name region, s.name rep, a.name account
 from dbo.sales_rep s
@@ -133,7 +154,6 @@ order by o.account_id
 
 
 -- Which account (by name) placed the earliest order?
-use ParchPosh
 
 select top 1 a.name account_name, o.occurred_at order_date
 from dbo.orders o
